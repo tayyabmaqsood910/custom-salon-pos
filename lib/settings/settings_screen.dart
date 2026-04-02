@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:file_picker/file_picker.dart';
 import '../providers/app_provider.dart';
 import '../utils/responsive_layout.dart';
+import '../license/license_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -50,6 +51,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _enableStaffLogin = false;
   late TextEditingController _adminPinCtrl;
   late TextEditingController _adminPinConfirmCtrl;
+  late TextEditingController _adminUsernameCtrl;
+  late TextEditingController _adminPasswordCtrl;
+  late TextEditingController _managerUsernameCtrl;
+  late TextEditingController _managerPasswordCtrl;
+  bool _showAdminPin = false;
+  bool _showAdminPinConfirm = false;
+  bool _showAdminPassword = false;
+  bool _showManagerPassword = false;
 
   // Tab 5
   String _systemTheme = 'Deep Ocean Dark (Default)';
@@ -61,6 +70,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _dbSize = '0.00 MB';
   String _backupSize = '0.00 MB';
   String _totalRecords = '0 records';
+  final LicenseService _licenseService = LicenseService();
 
   static const List<String> _paymentMethodValues = [
     'Cash',
@@ -239,6 +249,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _lowStockThresholdCtrl = TextEditingController();
     _adminPinCtrl = TextEditingController();
     _adminPinConfirmCtrl = TextEditingController();
+    _adminUsernameCtrl = TextEditingController();
+    _adminPasswordCtrl = TextEditingController();
+    _managerUsernameCtrl = TextEditingController();
+    _managerPasswordCtrl = TextEditingController();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final s = context.read<AppProvider>().settings;
@@ -277,6 +291,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _lowStockThresholdCtrl.text = s['lowStockThreshold'] ?? '5';
         _adminPinCtrl.text = s['adminPin'] ?? '1234';
         _adminPinConfirmCtrl.text = s['adminPin'] ?? '1234';
+        _adminUsernameCtrl.text = s['adminUsername'] ?? 'admin';
+        _adminPasswordCtrl.text = s['adminPassword'] ?? 'Admin123!';
+        _managerUsernameCtrl.text = s['managerUsername'] ?? 'manager';
+        _managerPasswordCtrl.text = s['managerPassword'] ?? 'Manager123!';
       });
     });
   }
@@ -294,6 +312,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _lowStockThresholdCtrl.dispose();
     _adminPinCtrl.dispose();
     _adminPinConfirmCtrl.dispose();
+    _adminUsernameCtrl.dispose();
+    _adminPasswordCtrl.dispose();
+    _managerUsernameCtrl.dispose();
+    _managerPasswordCtrl.dispose();
     super.dispose();
   }
 
@@ -329,6 +351,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await context.read<AppProvider>().saveSettings({
       'enableAutoBackup': _enableAutoBackup.toString(),
     });
+  }
+
+  Future<void> _saveSecurityAccess() async {
+    if (_adminPinCtrl.text != _adminPinConfirmCtrl.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Admin PINs do not match!'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final adminUsername = _adminUsernameCtrl.text.trim();
+    final managerUsername = _managerUsernameCtrl.text.trim();
+    if (adminUsername.isEmpty ||
+        _adminPasswordCtrl.text.isEmpty ||
+        managerUsername.isEmpty ||
+        _managerPasswordCtrl.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Username and password fields cannot be empty.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    await context.read<AppProvider>().saveSettings({
+      'enableStaffLogin': _enableStaffLogin.toString(),
+      'adminPin': _adminPinCtrl.text,
+      'adminUsername': adminUsername,
+      'adminPassword': _adminPasswordCtrl.text,
+      'managerUsername': managerUsername,
+      'managerPassword': _managerPasswordCtrl.text,
+    });
+    if (!mounted) return;
+    _showSavedSnackbar();
   }
 
   Future<void> _saveAllSettings() async {
@@ -924,16 +984,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 16),
           if (isCompact) ...[
             TextField(
-              decoration: const InputDecoration(labelText: 'New Admin PIN'),
-              obscureText: true,
+              decoration: InputDecoration(
+                labelText: 'New Admin PIN',
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _showAdminPin ? Icons.visibility_off : Icons.visibility,
+                  ),
+                  onPressed: () =>
+                      setState(() => _showAdminPin = !_showAdminPin),
+                ),
+              ),
+              obscureText: !_showAdminPin,
               controller: _adminPinCtrl,
             ),
             const SizedBox(height: 16),
             TextField(
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Confirm Admin PIN',
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _showAdminPinConfirm
+                        ? Icons.visibility_off
+                        : Icons.visibility,
+                  ),
+                  onPressed: () => setState(
+                    () => _showAdminPinConfirm = !_showAdminPinConfirm,
+                  ),
+                ),
               ),
-              obscureText: true,
+              obscureText: !_showAdminPinConfirm,
               controller: _adminPinConfirmCtrl,
             ),
           ] else
@@ -941,26 +1020,156 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 Expanded(
                   child: TextField(
-                    decoration: const InputDecoration(labelText: 'New Admin PIN'),
-                    obscureText: true,
+                    decoration: InputDecoration(
+                      labelText: 'New Admin PIN',
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _showAdminPin ? Icons.visibility_off : Icons.visibility,
+                        ),
+                        onPressed: () =>
+                            setState(() => _showAdminPin = !_showAdminPin),
+                      ),
+                    ),
+                    obscureText: !_showAdminPin,
                     controller: _adminPinCtrl,
                   ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: TextField(
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Confirm Admin PIN',
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _showAdminPinConfirm
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
+                        onPressed: () => setState(
+                          () => _showAdminPinConfirm = !_showAdminPinConfirm,
+                        ),
+                      ),
                     ),
-                    obscureText: true,
+                    obscureText: !_showAdminPinConfirm,
                     controller: _adminPinConfirmCtrl,
                   ),
                 ),
               ],
             ),
+          const SizedBox(height: 20),
+          const Text(
+            'Login Credentials',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 10),
+          if (isCompact) ...[
+            TextField(
+              controller: _adminUsernameCtrl,
+              decoration: const InputDecoration(labelText: 'Admin Username'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _adminPasswordCtrl,
+              obscureText: !_showAdminPassword,
+              decoration: InputDecoration(
+                labelText: 'Admin Password',
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _showAdminPassword ? Icons.visibility_off : Icons.visibility,
+                  ),
+                  onPressed: () => setState(
+                    () => _showAdminPassword = !_showAdminPassword,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _managerUsernameCtrl,
+              decoration: const InputDecoration(labelText: 'Manager Username'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _managerPasswordCtrl,
+              obscureText: !_showManagerPassword,
+              decoration: InputDecoration(
+                labelText: 'Manager Password',
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _showManagerPassword ? Icons.visibility_off : Icons.visibility,
+                  ),
+                  onPressed: () => setState(
+                    () => _showManagerPassword = !_showManagerPassword,
+                  ),
+                ),
+              ),
+            ),
+          ] else ...[
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _adminUsernameCtrl,
+                    decoration: const InputDecoration(labelText: 'Admin Username'),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: TextField(
+                    controller: _adminPasswordCtrl,
+                    obscureText: !_showAdminPassword,
+                    decoration: InputDecoration(
+                      labelText: 'Admin Password',
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _showAdminPassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
+                        onPressed: () => setState(
+                          () => _showAdminPassword = !_showAdminPassword,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _managerUsernameCtrl,
+                    decoration: const InputDecoration(labelText: 'Manager Username'),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: TextField(
+                    controller: _managerPasswordCtrl,
+                    obscureText: !_showManagerPassword,
+                    decoration: InputDecoration(
+                      labelText: 'Manager Password',
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _showManagerPassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
+                        onPressed: () => setState(
+                          () => _showManagerPassword = !_showManagerPassword,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 32),
           ElevatedButton(
-            onPressed: _saveAllSettings,
+            onPressed: _saveSecurityAccess,
             child: const Text('Update Permissions'),
           ),
         ],
@@ -1073,6 +1282,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildStatRow('Last backup', 'Never'),
               ],
             ),
+          ),
+          const SizedBox(height: 24),
+          FutureBuilder<int?>(
+            future: _licenseService.daysRemaining(),
+            builder: (context, snapshot) {
+              final days = snapshot.data;
+              final text = days == null
+                  ? 'License status: Not activated'
+                  : days < 0
+                      ? 'License expired ${days.abs()} day(s) ago'
+                      : 'License days remaining: $days';
+              return Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(isCompact ? 14 : 18),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF161618),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white12),
+                ),
+                child: Text(
+                  text,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              );
+            },
           ),
           const SizedBox(height: 24),
 

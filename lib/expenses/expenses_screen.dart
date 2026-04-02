@@ -661,25 +661,36 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: SingleChildScrollView(
-                      child: DataTable(
-                        columnSpacing: 40,
-                        headingTextStyle: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                        columns: const [
-                          DataColumn(label: Text('Date')),
-                          DataColumn(label: Text('Category')),
-                          DataColumn(label: Text('Description')),
-                          DataColumn(label: Text('Amount')),
-                          DataColumn(label: Text('Payment')),
-                          DataColumn(label: Text('Recurring?')),
-                          DataColumn(label: Text('Receipt')),
-                          DataColumn(label: Text('Actions')),
-                        ],
-                        rows: _filteredExpenses.map((exp) {
-                          return DataRow(
-                            cells: [
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(minWidth: 1240),
+                        child: MediaQuery(
+                          // Keep table labels readable even when global UI scale is large.
+                          data: MediaQuery.of(context).copyWith(
+                            textScaler: const TextScaler.linear(0.95),
+                          ),
+                          child: DataTable(
+                            columnSpacing: 22,
+                            headingRowHeight: 60,
+                            dataRowMinHeight: 56,
+                            dataRowMaxHeight: 72,
+                            headingTextStyle: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              fontSize: 13,
+                            ),
+                            columns: const [
+                              DataColumn(label: SizedBox(width: 86, child: Text('Date'))),
+                              DataColumn(label: SizedBox(width: 120, child: Text('Category'))),
+                              DataColumn(label: SizedBox(width: 210, child: Text('Description'))),
+                              DataColumn(label: SizedBox(width: 104, child: Text('Amount'))),
+                              DataColumn(label: SizedBox(width: 96, child: Text('Payment'))),
+                              DataColumn(label: SizedBox(width: 108, child: Text('Recurring?'))),
+                              DataColumn(label: SizedBox(width: 86, child: Text('Receipt'))),
+                              DataColumn(label: SizedBox(width: 92, child: Text('Actions'))),
+                            ],
+                          rows: _filteredExpenses.map((exp) {
+                            return DataRow(
+                              cells: [
                           DataCell(
                             Text(
                               '${exp.date.day}/${exp.date.month}/${exp.date.year}',
@@ -740,68 +751,85 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                             ),
                           ),
                           DataCell(
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.edit,
-                                    color: Colors.blueAccent,
-                                    size: 20,
+                            SizedBox(
+                              width: 84,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(
+                                      minWidth: 34,
+                                      minHeight: 34,
+                                    ),
+                                    visualDensity: VisualDensity.compact,
+                                    icon: const Icon(
+                                      Icons.edit,
+                                      color: Colors.blueAccent,
+                                      size: 18,
+                                    ),
+                                    onPressed: () => _showAddEditDialog(exp),
                                   ),
-                                  onPressed: () => _showAddEditDialog(exp),
-                                ),
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.delete,
-                                    color: Colors.redAccent,
-                                    size: 20,
-                                  ),
-                                  onPressed: () {
-                                    showDialog(
-                                      context: context,
-                                      builder: (c) => AlertDialog(
-                                        title: const Text('Delete Expense'),
-                                        content: const Text(
-                                          'Are you sure you want to delete this expense?',
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () => Navigator.pop(c),
-                                            child: const Text('Cancel'),
+                                  IconButton(
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(
+                                      minWidth: 34,
+                                      minHeight: 34,
+                                    ),
+                                    visualDensity: VisualDensity.compact,
+                                    icon: const Icon(
+                                      Icons.delete,
+                                      color: Colors.redAccent,
+                                      size: 18,
+                                    ),
+                                    onPressed: () {
+                                      showDialog(
+                                        context: context,
+                                        builder: (c) => AlertDialog(
+                                          title: const Text('Delete Expense'),
+                                          content: const Text(
+                                            'Are you sure you want to delete this expense?',
                                           ),
-                                          ElevatedButton(
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.redAccent,
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () => Navigator.pop(c),
+                                              child: const Text('Cancel'),
                                             ),
-                                            onPressed: () {
-                                              context
-                                                  .read<AppProvider>()
-                                                  .deleteExpense(exp);
-                                              Navigator.pop(c);
-                                              ScaffoldMessenger.of(
-                                                context,
-                                              ).showSnackBar(
-                                                const SnackBar(
-                                                  content: Text(
-                                                    'Expense deleted',
+                                            ElevatedButton(
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.redAccent,
+                                              ),
+                                              onPressed: () {
+                                                context
+                                                    .read<AppProvider>()
+                                                    .deleteExpense(exp);
+                                                Navigator.pop(c);
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                      'Expense deleted',
+                                                    ),
                                                   ),
-                                                ),
-                                              );
-                                            },
-                                            child: const Text('Delete'),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ],
+                                                );
+                                              },
+                                              child: const Text('Delete'),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ],
                       );
-                        }).toList(),
+                          }).toList(),
+                          ),
+                        ),
                       ),
                     ),
                   ),

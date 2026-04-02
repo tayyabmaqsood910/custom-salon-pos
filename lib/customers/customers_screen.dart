@@ -16,10 +16,12 @@ class _CustomersScreenState extends State<CustomersScreen> {
   String _searchQuery = '';
   String _filterCriteria = 'All'; // All, Gold Tier, High Spender, Recent Visit
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _visitHistoryScrollCtrl = ScrollController();
 
   @override
   void dispose() {
     _searchController.dispose();
+    _visitHistoryScrollCtrl.dispose();
     super.dispose();
   }
 
@@ -669,12 +671,20 @@ class _CustomersScreenState extends State<CustomersScreen> {
                     Expanded(
                       child: Column(
                         children: [
-                          Text(
-                            '$currency${lifetimeValue.toStringAsFixed(0)}',
-                            style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.secondary,
+                          SizedBox(
+                            height: 44,
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                '$currency${lifetimeValue.toStringAsFixed(0)}',
+                                maxLines: 1,
+                                softWrap: false,
+                                style: TextStyle(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).colorScheme.secondary,
+                                ),
+                              ),
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -814,50 +824,91 @@ class _CustomersScreenState extends State<CustomersScreen> {
                     ),
                   )
                 else
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: DataTable(
-                      headingTextStyle: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                      columns: const [
-                        DataColumn(label: Text('Date')),
-                        DataColumn(label: Text('Services Taken')),
-                        DataColumn(label: Text('Staff')),
-                        DataColumn(label: Text('Amount Paid')),
-                        DataColumn(label: Text('Points Earned')),
-                      ],
-                      rows: visits.map((h) {
-                        return DataRow(
-                          cells: [
-                            DataCell(
-                              Text(
-                                '${h.date.day}/${h.date.month}/${h.date.year}',
-                              ),
+                  Scrollbar(
+                    controller: _visitHistoryScrollCtrl,
+                    thumbVisibility: true,
+                    interactive: true,
+                    radius: const Radius.circular(999),
+                    child: SingleChildScrollView(
+                      controller: _visitHistoryScrollCtrl,
+                      scrollDirection: Axis.horizontal,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(minWidth: 980),
+                        child: DataTable(
+                          columnSpacing: 22,
+                          headingTextStyle: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                          columns: const [
+                            DataColumn(label: SizedBox(width: 92, child: Text('Date'))),
+                            DataColumn(
+                              label: SizedBox(width: 360, child: Text('Services Taken')),
                             ),
-                            DataCell(Text(h.services)),
-                            DataCell(Text(h.staff)),
-                            DataCell(
-                              Text(
-                                '$currency${h.amountPaid.toStringAsFixed(2)}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                            DataColumn(label: SizedBox(width: 120, child: Text('Staff'))),
+                            DataColumn(
+                              label: SizedBox(width: 130, child: Text('Amount Paid')),
                             ),
-                            DataCell(
-                              Text(
-                                '+${h.pointsEarned}',
-                                style: const TextStyle(
-                                  color: Colors.amber,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                            DataColumn(
+                              label: SizedBox(width: 120, child: Text('Points Earned')),
                             ),
                           ],
-                        );
-                      }).toList(),
+                          rows: visits.map((h) {
+                            return DataRow(
+                              cells: [
+                                DataCell(
+                                  Text(
+                                    '${h.date.day}/${h.date.month}/${h.date.year}',
+                                  ),
+                                ),
+                                DataCell(
+                                  SizedBox(
+                                    width: 360,
+                                    child: Text(
+                                      h.services,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ),
+                                DataCell(
+                                  SizedBox(
+                                    width: 120,
+                                    child: Text(
+                                      h.staff,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ),
+                                DataCell(
+                                  SizedBox(
+                                    width: 130,
+                                    child: Text(
+                                      '$currency${h.amountPaid.toStringAsFixed(2)}',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ),
+                                DataCell(
+                                  SizedBox(
+                                    width: 120,
+                                    child: Text(
+                                      '+${h.pointsEarned}',
+                                      style: const TextStyle(
+                                        color: Colors.amber,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          }).toList(),
+                        ),
+                      ),
                     ),
                   ),
               ],

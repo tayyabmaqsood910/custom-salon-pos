@@ -1340,11 +1340,11 @@ class _BillingScreenState extends State<BillingScreen> {
     return LayoutBuilder(
       builder: (context, c) {
         final tileExtent = c.maxWidth < 420
-            ? 130.0
-            : (c.maxWidth < 600 ? 160.0 : 200.0);
+            ? 120.0
+            : (c.maxWidth < 600 ? 145.0 : 170.0);
         final tileAspect = c.maxWidth < 420
-            ? 0.82
-            : (c.maxWidth < 600 ? 0.92 : 1.05);
+            ? 0.90
+            : (c.maxWidth < 600 ? 1.0 : 1.12);
         return GridView.builder(
       itemCount: _filteredServices.length + 1,
       gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
@@ -1447,24 +1447,24 @@ class _BillingScreenState extends State<BillingScreen> {
                 Icon(
                   service.icon,
                   color: Theme.of(context).primaryColor,
-                  size: c.maxWidth < 420 ? 28 : 32,
+                  size: c.maxWidth < 420 ? 22 : 26,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
                   child: Text(
                     service.name,
                     textAlign: TextAlign.center,
-                    maxLines: 3,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      fontSize: c.maxWidth < 420 ? 16 : 18,
-                      height: 1.1,
+                      fontSize: c.maxWidth < 420 ? 13 : 14,
+                      height: 1.05,
                     ),
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
                   service.name == 'Custom Amount'
                       ? 'Variables'
@@ -1474,7 +1474,7 @@ class _BillingScreenState extends State<BillingScreen> {
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.secondary,
                     fontWeight: FontWeight.bold,
-                    fontSize: c.maxWidth < 420 ? 16 : 18,
+                    fontSize: c.maxWidth < 420 ? 11 : 12,
                   ),
                 ),
               ],

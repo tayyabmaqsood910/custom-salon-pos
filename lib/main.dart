@@ -6,10 +6,14 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'providers/app_provider.dart';
+import 'license/license_gate_screen.dart';
 
 import 'dashboard/dashboard_screen.dart';
+import 'auth/login_gate_screen.dart';
+import 'auth/auth_service.dart';
 import 'sales/billing_screen.dart';
 import 'inventory/inventory_screen.dart';
 import 'customers/customers_screen.dart';
@@ -29,6 +33,27 @@ void main() async {
   } else if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
+  }
+
+  const fallbackSupabaseUrl = 'https://hzjvddohqvokcmbkfwfp.supabase.co';
+  const fallbackSupabaseAnonKey =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.'
+      'eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh6anZkZG9ocXZva2NtYmtmd2ZwIiwicm9s'
+      'ZSI6ImFub24iLCJpYXQiOjE3NzM5NDMwNTksImV4cCI6MjA4OTUxOTA1OX0.'
+      'hm3KpyrzJb8nFTmf0ff1KpHMt56WdRCJyfoAprTsAYY';
+  const supabaseUrlFromEnv = String.fromEnvironment('SUPABASE_URL');
+  const supabaseAnonKeyFromEnv = String.fromEnvironment('SUPABASE_ANON_KEY');
+  final supabaseUrl = supabaseUrlFromEnv.isNotEmpty
+      ? supabaseUrlFromEnv
+      : fallbackSupabaseUrl;
+  final supabaseAnonKey = supabaseAnonKeyFromEnv.isNotEmpty
+      ? supabaseAnonKeyFromEnv
+      : fallbackSupabaseAnonKey;
+  if (supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty) {
+    await Supabase.initialize(
+      url: supabaseUrl,
+      anonKey: supabaseAnonKey,
+    );
   }
 
   final provider = AppProvider();
@@ -189,7 +214,11 @@ class SalonPOSApp extends StatelessWidget {
             data: mq.copyWith(
               textScaler: TextScaler.linear(fontScale),
             ),
-            child: const MainLayout(),
+            child: const LicenseGateScreen(
+              activeChild: LoginGateScreen(
+                child: MainLayout(),
+              ),
+            ),
           );
         },
       ),
@@ -914,7 +943,18 @@ class _SidebarFooter extends StatelessWidget {
                         : AppColors.moss,
                   ),
                   icon: const Icon(Icons.logout_rounded, size: 22),
-                  onPressed: () {},
+                  onPressed: () async {
+                    await AuthService().logout();
+                    if (!context.mounted) return;
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(
+                        builder: (_) => const LoginGateScreen(
+                          child: MainLayout(),
+                        ),
+                      ),
+                      (route) => false,
+                    );
+                  },
                 ),
               ],
             ),
