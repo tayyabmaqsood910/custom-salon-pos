@@ -18,62 +18,120 @@ class LicenseGateScreen extends StatefulWidget {
 
 class _LicenseGateScreenState extends State<LicenseGateScreen> {
   final LicenseService _service = LicenseService();
-  late Future<LicenseGateResult> _gateFuture;
+
+  bool _loading = true;
+  LicenseGateResult? _gate;
+  Object? _loadError;
+  int _gateRequestId = 0;
 
   @override
   void initState() {
     super.initState();
-    _gateFuture = _service.evaluateOnLaunch();
+    _runEvaluate();
   }
 
-  void _reload() {
-    setState(() => _gateFuture = _service.evaluateOnLaunch());
+  Future<void> _runEvaluate() async {
+    final id = ++_gateRequestId;
+    setState(() {
+      _loading = true;
+      _loadError = null;
+    });
+    try {
+      final result = await _service.evaluateOnLaunch();
+      if (!mounted || id != _gateRequestId) return;
+      setState(() {
+        _gate = result;
+        _loading = false;
+        _loadError = null;
+      });
+    } catch (e) {
+      if (!mounted || id != _gateRequestId) return;
+      setState(() {
+        _loadError = e;
+        _loading = false;
+      });
+    }
+  }
+
+  void _reload() => _runEvaluate();
+
+  void _applyGateResult(LicenseGateResult result) {
+    setState(() {
+      _gate = result;
+      _loading = false;
+      _loadError = null;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<LicenseGateResult>(
-      future: _gateFuture,
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-        final result = snapshot.data!;
-        switch (result.state) {
-          case LicenseGateState.active:
-            return widget.activeChild;
-          case LicenseGateState.notActivated:
-            return ActivationScreen(
-              service: _service,
-              onActivated: _reload,
-              message: result.message,
-            );
-          case LicenseGateState.expired:
-            return BlockedLicenseScreen(
-              title: 'License Expired',
-              description: 'License expired. Contact Ahmad.',
-              extra:
-                  'Expiry date: ${result.license != null ? _service.formatDate(result.license!.expiryDate) : '-'}',
-            );
-          case LicenseGateState.deactivated:
-            return const BlockedLicenseScreen(
-              title: 'License Deactivated',
-              description: 'License deactivated. Contact Ahmad.',
-            );
-          case LicenseGateState.onlineCheckRequired:
-            return BlockedLicenseScreen(
-              title: 'Online Verification Needed',
-              description:
-                  result.message ??
-                  'Please connect to WiFi to verify your license. Contact: +92-313-6625199',
-              actionLabel: 'Retry Check',
-              onAction: _reload,
-            );
-        }
-      },
-    );
+    if (_loading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (_loadError != null) {
+      return Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.error_outline, size: 48, color: Colors.redAccent),
+                const SizedBox(height: 16),
+                Text(
+                  'License check failed: $_loadError',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: _reload,
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+    final result = _gate;
+    if (result == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+    switch (result.state) {
+      case LicenseGateState.active:
+        return widget.activeChild;
+      case LicenseGateState.notActivated:
+        return ActivationScreen(
+          service: _service,
+          onActivated: _applyGateResult,
+          message: result.message,
+        );
+      case LicenseGateState.expired:
+        return BlockedLicenseScreen(
+          title: 'License Expired',
+          description: 'License expired. Contact Ahmad.',
+          extra:
+              'Expiry date: ${result.license != null ? _service.formatDate(result.license!.expiryDate) : '-'}',
+        );
+      case LicenseGateState.deactivated:
+        return const BlockedLicenseScreen(
+          title: 'License Deactivated',
+          description: 'License deactivated. Contact Ahmad.',
+        );
+      case LicenseGateState.onlineCheckRequired:
+        return BlockedLicenseScreen(
+          title: 'Online Verification Needed',
+          description:
+              result.message ??
+              'Please connect to WiFi to verify your license. Contact: +92-313-6625199',
+          actionLabel: 'Retry Check',
+          onAction: _reload,
+        );
+    }
   }
 }
 
@@ -86,7 +144,7 @@ class ActivationScreen extends StatefulWidget {
   });
 
   final LicenseService service;
-  final VoidCallback onActivated;
+  final void Function(LicenseGateResult result) onActivated;
   final String? message;
 
   @override
@@ -119,12 +177,16 @@ class _ActivationScreenState extends State<ActivationScreen> {
     });
     final result = await widget.service.activate(shopId: shopId, activationKey: key);
     if (!mounted) return;
-    setState(() => _loading = false);
     if (result.state == LicenseGateState.active) {
-      widget.onActivated();
+      // Do not setState on this widget first: parent replaces this subtree and a
+      // pending child setState can throw or stall the transition.
+      widget.onActivated(result);
       return;
     }
-    setState(() => _error = result.message ?? 'Activation failed.');
+    setState(() {
+      _loading = false;
+      _error = result.message ?? 'Activation failed.';
+    });
   }
 
   @override

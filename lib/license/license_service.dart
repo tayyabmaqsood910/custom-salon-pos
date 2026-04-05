@@ -171,10 +171,34 @@ class LicenseService {
     // it can report "none" even when internet is available.
     // We validate directly against Supabase and map real network failures.
     return _validateAgainstServer(
-      shopId: shopId.trim().toUpperCase(),
+      shopId: shopId.trim(),
       activationKey: activationKey.trim().toUpperCase(),
       allowOfflineFallback: false,
     );
+  }
+
+  /// Tries exact [shop_id] matches with common case variants (DB may not be uppercased).
+  Future<Map<String, dynamic>?> _fetchLicenseRowByShopId(
+    SupabaseClient supabase,
+    String shopId,
+  ) async {
+    final trimmed = shopId.trim();
+    if (trimmed.isEmpty) return null;
+    final variants = <String>{
+      trimmed,
+      trimmed.toUpperCase(),
+      trimmed.toLowerCase(),
+    };
+    for (final candidate in variants) {
+      final raw = await supabase
+          .from('licenses')
+          .select('*')
+          .eq('shop_id', candidate)
+          .maybeSingle()
+          .timeout(const Duration(seconds: 12));
+      if (raw != null) return raw;
+    }
+    return null;
   }
 
   Future<LicenseGateResult> _validateAgainstServer({
@@ -186,12 +210,7 @@ class LicenseService {
       final supabase = Supabase.instance.client;
       // Query by shop_id first, then validate activation key in app code.
       // This avoids hard failures when some deployments use different column names.
-      final raw = await supabase
-          .from('licenses')
-          .select('*')
-          .eq('shop_id', shopId)
-          .maybeSingle()
-          .timeout(const Duration(seconds: 12));
+      final raw = await _fetchLicenseRowByShopId(supabase, shopId);
 
       if (raw == null) {
         return const LicenseGateResult(
@@ -278,15 +297,24 @@ class LicenseService {
         activationKey: license.activationKey,
       );
 
-      await saveValidatedLicense(
-        shopId: license.shopId,
-        activationKey: license.activationKey,
-        expiryDate: license.expiryDate,
-        clientName: license.clientName,
-        clientPhone: license.clientPhone,
-        status: 'active',
-        lastOnlineCheck: DateTime.now(),
-      );
+      try {
+        await saveValidatedLicense(
+          shopId: license.shopId,
+          activationKey: license.activationKey,
+          expiryDate: license.expiryDate,
+          clientName: license.clientName,
+          clientPhone: license.clientPhone,
+          status: 'active',
+          lastOnlineCheck: DateTime.now(),
+        );
+      } catch (e, st) {
+        debugPrint('saveValidatedLicense failed: $e\n$st');
+        return LicenseGateResult(
+          state: LicenseGateState.notActivated,
+          message:
+              'License verified but could not save on this device ($e). Try again or reinstall.',
+        );
+      }
 
       return LicenseGateResult(
         state: LicenseGateState.active,
@@ -348,31 +376,37 @@ class LicenseService {
     required String shopId,
     required String activationKey,
   }) async {
+    final payload = <String, dynamic>{
+      'last_pos_check': DateTime.now().toIso8601String(),
+    };
     try {
       await supabase
           .from('licenses')
-          .update({
-            'last_pos_check': DateTime.now().toIso8601String(),
-            'last_checked': DateTime.now().toIso8601String(),
-          })
+          .update(payload)
           .eq('shop_id', shopId)
           .eq('activation_key', activationKey)
           .timeout(const Duration(seconds: 8));
     } catch (e) {
-      // Fallback for schemas without activation_key in update filters.
       try {
         await supabase
             .from('licenses')
-            .update({
-              'last_pos_check': DateTime.now().toIso8601String(),
-              'last_checked': DateTime.now().toIso8601String(),
-            })
+            .update(payload)
             .eq('shop_id', shopId)
             .timeout(const Duration(seconds: 8));
       } catch (e2) {
-        // Do not block activation if timestamp write is rejected.
-        debugPrint('Could not update last_pos_check/last_checked: $e / $e2');
+        debugPrint('Could not update last_pos_check: $e / $e2');
       }
+    }
+    try {
+      await supabase
+          .from('licenses')
+          .update({
+            'last_checked': DateTime.now().toIso8601String(),
+          })
+          .eq('shop_id', shopId)
+          .timeout(const Duration(seconds: 6));
+    } catch (_) {
+      // Optional column on some deployments.
     }
   }
 

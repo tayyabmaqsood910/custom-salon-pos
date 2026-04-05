@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../constants/app_currency.dart';
 import '../models/models.dart';
 import '../providers/app_provider.dart';
 import '../utils/responsive_layout.dart';
@@ -429,7 +430,8 @@ class _CustomersScreenState extends State<CustomersScreen> {
   }
 
   Widget _buildProfileDashboard(CustomerProfile customer, AppProvider provider) {
-    final currency = provider.settings['currencySymbol'] ?? '\$';
+    final currency =
+        provider.settings['currencySymbol'] ?? kDefaultCurrencySymbol;
     final visits = _visitHistoryFromTransactions(provider, customer);
     final totalVisits = visits.length;
     final lifetimeValue = visits.fold<double>(0, (s, v) => s + v.amountPaid);

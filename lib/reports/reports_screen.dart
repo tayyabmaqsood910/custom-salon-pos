@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 
+import '../constants/app_currency.dart';
 import '../models/models.dart';
 import '../providers/app_provider.dart';
 import '../theme/app_colors.dart';
@@ -347,7 +348,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
-    final currency = provider.settings['currencySymbol'] ?? '\$';
+    final currency =
+        provider.settings['currencySymbol'] ?? kDefaultCurrencySymbol;
     final txs = _tx(provider);
     final exps = _exp(provider);
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
+import '../constants/app_currency.dart';
 import '../providers/app_provider.dart';
 import '../theme/app_colors.dart';
 import '../utils/responsive_layout.dart';
@@ -47,7 +48,8 @@ class DashboardScreen extends StatelessWidget {
     );
     double netProfit = totalRevenue - totalExpense;
     bool isNetPositive = netProfit >= 0;
-    final currency = provider.settings['currencySymbol'] ?? '\$';
+    final currency =
+        provider.settings['currencySymbol'] ?? kDefaultCurrencySymbol;
 
     return Padding(
       padding: AppBreakpoints.pagePadding(context),

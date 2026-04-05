@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import '../constants/app_currency.dart';
 import '../models/models.dart';
 import '../providers/app_provider.dart';
 import '../utils/responsive_layout.dart';
@@ -25,7 +26,8 @@ class _StaffScreenState extends State<StaffScreen> {
   ];
 
   String _currencySymbol(BuildContext context) =>
-      context.read<AppProvider>().settings['currencySymbol'] ?? '\$';
+      context.read<AppProvider>().settings['currencySymbol'] ??
+          kDefaultCurrencySymbol;
 
   String _staffNameById(AppProvider provider, String? staffId) {
     if (staffId == null || staffId.isEmpty) return 'Unknown';
@@ -1175,7 +1177,8 @@ class _StaffScreenState extends State<StaffScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
-    final currency = provider.settings['currencySymbol'] ?? '\$';
+    final currency =
+        provider.settings['currencySymbol'] ?? kDefaultCurrencySymbol;
     return Padding(
       padding: AppBreakpoints.pagePadding(context),
       child: LayoutBuilder(

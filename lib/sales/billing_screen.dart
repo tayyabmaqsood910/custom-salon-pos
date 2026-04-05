@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../constants/app_currency.dart';
 import '../models/models.dart';
 import '../providers/app_provider.dart';
 import '../utils/material_icon_from_codepoint.dart';
@@ -34,7 +35,9 @@ class _BillingScreenState extends State<BillingScreen> {
     _receivedAmountCtrl.dispose();
     super.dispose();
   }
-  String get _currency => context.read<AppProvider>().settings['currencySymbol'] ?? '\$';
+  String get _currency =>
+      context.read<AppProvider>().settings['currencySymbol'] ??
+      kDefaultCurrencySymbol;
 
   String _selectedCategory = 'All';
   String _searchQuery = '';
@@ -546,7 +549,7 @@ class _BillingScreenState extends State<BillingScreen> {
               }
               return ListView.separated(
                 itemCount: transactions.length,
-                separatorBuilder: (_, __) =>
+                separatorBuilder: (_, _) =>
                     const Divider(height: 1, color: Colors.white12),
                 itemBuilder: (ctx, i) {
                   final tx = transactions[i];

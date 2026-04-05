@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../constants/app_currency.dart';
 import '../models/models.dart';
 import '../providers/app_provider.dart';
 import '../utils/responsive_layout.dart';
@@ -62,7 +63,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
   void _showAddEditDialog([InventoryItem? item]) {
     final currency =
-        context.read<AppProvider>().settings['currencySymbol'] ?? '\$';
+        context.read<AppProvider>().settings['currencySymbol'] ??
+            kDefaultCurrencySymbol;
     final isEditing = item != null;
     final previousQty = item?.quantity ?? 0;
     final nameCtrl = TextEditingController(text: item?.name ?? '');
@@ -290,7 +292,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
   void _showAdjustStockDialog(InventoryItem item) {
     final currency =
-        context.read<AppProvider>().settings['currencySymbol'] ?? '\$';
+        context.read<AppProvider>().settings['currencySymbol'] ??
+            kDefaultCurrencySymbol;
     bool isAdding = true;
     final qtyCtrl = TextEditingController();
     final noteCtrl = TextEditingController();
@@ -415,7 +418,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
   @override
   Widget build(BuildContext context) {
     final currency =
-        context.watch<AppProvider>().settings['currencySymbol'] ?? '\$';
+        context.watch<AppProvider>().settings['currencySymbol'] ??
+            kDefaultCurrencySymbol;
     return Padding(
       padding: AppBreakpoints.pagePadding(context),
       child: LayoutBuilder(
@@ -483,7 +487,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
               ? Column(
                   children: [
                     Consumer<AppProvider>(
-                      builder: (ctx, _, __) => _SummaryCard(
+                      builder: (ctx, _, _) => _SummaryCard(
                         title: 'Total Items',
                         value: context
                             .read<AppProvider>()
@@ -514,7 +518,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   children: [
                     Expanded(
                       child: Consumer<AppProvider>(
-                        builder: (ctx, _, __) => _SummaryCard(
+                        builder: (ctx, _, _) => _SummaryCard(
                           title: 'Total Items',
                           value: context
                               .read<AppProvider>()

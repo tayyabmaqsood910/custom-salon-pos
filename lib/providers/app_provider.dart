@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
+import '../constants/app_currency.dart';
 import '../models/models.dart';
 import '../database/database_helper.dart';
 
@@ -44,10 +45,23 @@ class AppProvider extends ChangeNotifier {
     // Load all data from SQLite exclusively
     await _loadAllData();
     await _applyProvidedMenuSeedIfNeeded();
+    await _ensurePkrCurrencyDefault();
     // Dummy data generation removed as requested.
 
     isInitialized = true;
     notifyListeners();
+  }
+
+  /// PKR by default; migrate legacy USD symbol from settings DB.
+  Future<void> _ensurePkrCurrencyDefault() async {
+    final sym = settings['currencySymbol'];
+    if (sym == null || sym.isEmpty || sym == r'$') {
+      await DatabaseHelper.instance.saveSetting(
+        'currencySymbol',
+        kDefaultCurrencySymbol,
+      );
+      settings['currencySymbol'] = kDefaultCurrencySymbol;
+    }
   }
 
   Future<void> _loadAllData() async {

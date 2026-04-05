@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
+import '../constants/app_currency.dart';
 import '../models/models.dart';
 import '../providers/app_provider.dart';
 import '../utils/responsive_layout.dart';
@@ -100,7 +101,8 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
 
   void _showAddEditDialog([ExpenseItem? item]) {
     final currency =
-        context.read<AppProvider>().settings['currencySymbol'] ?? '\$';
+        context.read<AppProvider>().settings['currencySymbol'] ??
+            kDefaultCurrencySymbol;
     final isEditing = item != null;
     final descCtrl = TextEditingController(text: item?.description ?? '');
     final amountCtrl = TextEditingController(
@@ -299,7 +301,8 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
   @override
   Widget build(BuildContext context) {
     final currency =
-        context.watch<AppProvider>().settings['currencySymbol'] ?? '\$';
+        context.watch<AppProvider>().settings['currencySymbol'] ??
+            kDefaultCurrencySymbol;
     return LayoutBuilder(
       builder: (context, constraints) {
         final narrow = constraints.maxWidth < AppBreakpoints.mobile;

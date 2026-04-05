@@ -829,7 +829,7 @@ class _BrandLogo extends StatelessWidget {
               width: size,
               height: size,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Icon(
+              errorBuilder: (_, _, _) => Icon(
                 Icons.content_cut_rounded,
                 color: primary,
                 size: size,
@@ -1011,7 +1011,7 @@ class _AdminAvatarContent extends StatelessWidget {
               width: 48,
               height: 48,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Icon(
+              errorBuilder: (_, _, _) => Icon(
                 Icons.person_rounded,
                 color: primary,
                 size: 28,

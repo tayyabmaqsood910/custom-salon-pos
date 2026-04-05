@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:file_picker/file_picker.dart';
+import '../constants/app_currency.dart';
 import '../providers/app_provider.dart';
 import '../utils/responsive_layout.dart';
 import '../license/license_service.dart';
@@ -33,7 +34,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late TextEditingController _taxCtrl;
   late TextEditingController _addressCtrl;
   late TextEditingController _footerCtrl;
-  String _currencySymbol = '\$';
+  String _currencySymbol = kDefaultCurrencySymbol;
 
   // Tab 2
   String _defaultPaymentMethod = 'Cash';
@@ -265,7 +266,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _footerCtrl.text =
             s['receiptFooter'] ??
             'Thank you for your visit! Follow us on IG @StylesPOS';
-        _currencySymbol = s['currencySymbol'] ?? '\$';
+        _currencySymbol = s['currencySymbol'] ?? kDefaultCurrencySymbol;
         _businessLogoPath = s['businessLogoPath'];
 
         _defaultPaymentMethod =
@@ -651,8 +652,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final currencyDropdown = DropdownButtonFormField<String>(
           key: ValueKey<String>(_currencySymbol),
           initialValue: _currencySymbol,
-          decoration: const InputDecoration(labelText: 'Currency Symbol'),
-          items: ['\$', 'Rs.', '€', '£']
+          decoration: const InputDecoration(labelText: 'Currency (PKR default)'),
+          items: ['Rs.', 'PKR ', '₨', r'$', '€', '£']
               .map((c) => DropdownMenuItem(value: c, child: Text(c)))
               .toList(),
           onChanged: (v) {
@@ -862,17 +863,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 16),
           if (isCompact) ...[
             TextField(
-              decoration: const InputDecoration(
-                labelText: 'Amount Spent to Earn 1 Point (\$)',
-                prefixIcon: Icon(Icons.money),
+              decoration: InputDecoration(
+                labelText:
+                    'Amount Spent to Earn 1 Point ($_currencySymbol)',
+                prefixIcon: const Icon(Icons.money),
               ),
               controller: _pointsEarnRateCtrl,
             ),
             const SizedBox(height: 16),
             TextField(
-              decoration: const InputDecoration(
-                labelText: 'Points Required for \$1 Discount',
-                prefixIcon: Icon(Icons.star),
+              decoration: InputDecoration(
+                labelText:
+                    'Points Required for ${_currencySymbol}1 Discount',
+                prefixIcon: const Icon(Icons.star),
               ),
               controller: _pointsRedeemRateCtrl,
             ),
@@ -881,9 +884,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 Expanded(
                   child: TextField(
-                    decoration: const InputDecoration(
-                      labelText: 'Amount Spent to Earn 1 Point (\$)',
-                      prefixIcon: Icon(Icons.money),
+                    decoration: InputDecoration(
+                      labelText:
+                          'Amount Spent to Earn 1 Point ($_currencySymbol)',
+                      prefixIcon: const Icon(Icons.money),
                     ),
                     controller: _pointsEarnRateCtrl,
                   ),
@@ -891,9 +895,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: TextField(
-                    decoration: const InputDecoration(
-                      labelText: 'Points Required for \$1 Discount',
-                      prefixIcon: Icon(Icons.star),
+                    decoration: InputDecoration(
+                      labelText:
+                          'Points Required for ${_currencySymbol}1 Discount',
+                      prefixIcon: const Icon(Icons.star),
                     ),
                     controller: _pointsRedeemRateCtrl,
                   ),
